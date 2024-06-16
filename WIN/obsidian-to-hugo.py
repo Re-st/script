@@ -1,11 +1,11 @@
 import os
 import re
+import argparse
 from datetime import datetime
 from obsidian_to_hugo import ObsidianToHugo
-from secret import obsidian_vault_dir, hugo_content_dir
 
 class CustomObsidianToHugo(ObsidianToHugo):
-    def __init__(self, obsidian_vault_dir: str, hugo_content_dir: str,          processors: list = None, filters: list = None, custom_processors: list = None):
+    def __init__(self, obsidian_vault_dir: str, hugo_content_dir: str, processors: list = None, filters: list = None, custom_processors: list = None):
         super().__init__(obsidian_vault_dir, hugo_content_dir)
         self.custom_processors = custom_processors
 
@@ -48,7 +48,6 @@ class CustomObsidianToHugo(ObsidianToHugo):
                         f.write(content)
 
 def process_file(file_contents: str, file_path: str) -> str:
-
     # Extract metadata
     metadata_pattern = re.compile(r'^---\s*\n(.*?)\n---\s*\n', re.DOTALL | re.MULTILINE)
     metadata_match = metadata_pattern.search(file_contents)
@@ -122,19 +121,24 @@ summary: {summary}
 """ + metadata
 
     if metadata[-1] != '\n':
-            metadata += '\n'
+        metadata += '\n'
     # \n\n...\n -> \n
     metadata = re.sub(r'\n\n+', '\n', metadata)
     # Return the processed file contents
     final_contents = f"---\n{metadata}---\n" + urls_str + file_contents
     return final_contents
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process Obsidian vault to Hugo content.")
+    parser.add_argument("-o", "--obsidian_vault_dir", required=True, help="Path to the Obsidian vault directory")
+    parser.add_argument("-c", "--hugo_content_dir", required=True, help="Path to the Hugo content directory")
 
+    args = parser.parse_args()
 
-obsidian_to_hugo = CustomObsidianToHugo(
-    obsidian_vault_dir,
-    hugo_content_dir,
-    custom_processors=[process_file],
-)
+    obsidian_to_hugo = CustomObsidianToHugo(
+        args.obsidian_vault_dir,
+        args.hugo_content_dir,
+        custom_processors=[process_file],
+    )
 
-obsidian_to_hugo.custom_rum()
+    obsidian_to_hugo.custom_rum()
